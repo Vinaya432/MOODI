@@ -1,24 +1,27 @@
 import cv2
 import numpy as np
 from keras.models import model_from_json
-
+import time
+import random
+import os
 
 emotion_dict = {0: "Angry", 1: "Happy", 2: "Neutral", 3: "Sad"}
-
+text = ""
 # load json and create model
-json_file = open('../model/emotion_model.json', 'r')
+json_file = open('model/emotion_model.json', 'r')
 loaded_model_json = json_file.read()
 json_file.close()
 emotion_model = model_from_json(loaded_model_json)
 
 # load weights into new model
-emotion_model.load_weights("../model/emotion_model.h5")
+emotion_model.load_weights("model/emotion_model.h5")
 print("Loaded model from disk")
 
 # start the webcam feed
 cap = cv2.VideoCapture(0)
 
-
+now = time.time()
+future = now + 5
 
 while True:
     # Find haar cascade to draw bounding box around face
@@ -26,7 +29,7 @@ while True:
     frame = cv2.resize(frame, (1280, 720))
     if not ret:
         break
-    face_detector = cv2.CascadeClassifier('../haarcascades/haarcascade_frontalface_default.xml')
+    face_detector = cv2.CascadeClassifier('haarcascades/haarcascade_frontalface_default.xml')
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     # detect faces available on camera
@@ -42,10 +45,52 @@ while True:
         emotion_prediction = emotion_model.predict(cropped_img)
         maxindex = int(np.argmax(emotion_prediction))
         cv2.putText(frame, emotion_dict[maxindex], (x+5, y-20), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
-
+        text = emotion_dict[maxindex]
+        text = text.title()
     cv2.imshow('Emotion Detection', frame)
+
+    key = cv2.waitKey(30) & 0xFF
+
+    if time.time() > future:
+
+        cv2.destroyAllWindows()
+
+    #emotion and song mapping
+        if text == 'Angry':
+                print('You are angry !!!! please calm down:) ,I will play song for you :')
+                path = "songs\\angry\\"
+                files = os.listdir(path)
+                d = random.choice(files)
+                os.startfile(path + d)
+                break
+
+        if text == 'Happy':
+                print('You are smiling :) ,I playing special song for you: ')
+                path = "songs\\happy\\"
+                files = os.listdir(path)
+                d = random.choice(files)
+                os.startfile(path + d)
+                break
+
+        if text == 'Neutral':
+                print('Yo cheer up ,I will play a song for you: ')
+                path = "songs\\neutral\\"
+                files = os.listdir(path)
+                d = random.choice(files)
+                os.startfile(path+d)
+                break
+
+        if text == 'Sad':
+                print('You are sad,dont worry:) ,I playing song for you: ')
+                path = "songs\\sad\\"
+                files = os.listdir(path)
+                d = random.choice(files)
+                os.startfile(path + d)
+                break
+
+
+
+
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-cap.release()
-cv2.destroyAllWindows()
